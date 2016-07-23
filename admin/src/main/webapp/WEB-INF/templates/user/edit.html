@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="../../../resources/img/favicon.ico" th:href="@{/resources/img/favicon.ico}">
+
+    <title>Help Me!</title>
+
+    <!-- Bootstrap core CSS -->
+
+
+    <link href="../../../resources/bootstrap-3.3.6/css/bootstrap.min.css"
+          th:href="@{/resources/bootstrap-3.3.6/css/bootstrap.min.css}" rel="stylesheet">
+    <link rel="stylesheet" href="../../../resources/jquery-ui-1.12.0/jquery-ui.min.css"
+          th:href="@{/resources/jquery-ui-1.12.0/jquery-ui.min.css}">
+    <link rel="stylesheet" href="../../../resources/jquery-ui-1.12.0/jquery-ui.theme.min.css"
+          th:href="@{/resources/jquery-ui-1.12.0/jquery-ui.theme.min.css}">
+
+    <!-- Custom styles for this template -->
+    <link href="../../../resources/css/style.css" th:href="@{/resources/css/style.css}" rel="stylesheet">
+
+</head>
+
+
+<body>
+
+<nav th:include="fragments/nav :: copy" class="navbar navbar-default navbar-static-top">
+</nav>
+
+<!-- Begin page content -->
+<div class="container">
+    <div class="row">
+        <h3>
+            用户信息
+        </h3>
+    </div>
+    <div class="row">
+
+        <form role="form" th:action="@{/user/edit}" th:object="${user}" method="post">
+            <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger" role="alert">
+                <span th:each="err : ${#fields.globalErrors()}" th:text="${err}">...</span>
+            </div>
+
+            <div class="form-group">
+                <label for="id">ID</label>
+                <input type="text" class="form-control" id="id" name="id" th:value="*{id}" readonly="readonly"/>
+            </div>
+            <div class="form-group">
+                <label for="name">用户名</label>
+                <input type="text" class="form-control" id="name" name="name" th:value="*{name}" />
+            </div>
+
+
+            <div class="form-group" th:class="${#fields.hasErrors('mobile') ? 'form-group has-error' : 'form-group'}">
+                <label for="mobile">手机号码</label>
+                <input type="text" class="form-control" id="mobile" name="mobile" th:value="*{mobile}"/>
+                <span class="help-block" th:if="${#fields.hasErrors('mobile')}" th:errors="*{mobile}"></span>
+            </div>
+
+            <div class="form-group" th:class="${#fields.hasErrors('email') ? 'form-group has-error' : 'form-group'}">
+                <label for="email">邮箱</label>
+                <input type="text" class="form-control" id="email" name="email" th:value="*{email}"/>
+                <span class="help-block" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></span>
+            </div>
+
+
+            <div class="form-group" th:class="${#fields.hasErrors('weight') ? 'form-group has-error' : 'form-group'}">
+                <label for="weight">体重</label>
+                <input type="text" class="form-control" id="weight" name="weight" th:value="*{weight}"/>
+                <span class="help-block" th:if="${#fields.hasErrors('weight')}" th:errors="*{weight}"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="birthday">出生日期</label>
+                <input type="text" class="form-control" id="birthday" name="birthday" th:field="*{birthday}" />
+            </div>
+
+
+
+            <div class="form-group" >
+                <label for="birthday">性别:</label>
+                <span th:each="ty : ${allGenders}">
+                    <input type="radio" th:field="*{gender}" th:value="${ty}" />
+                    <label th:for="${ty}" th:text="${ty}">..</label>
+                </span>
+
+            </div>
+
+            <div class="form-group" >
+                <label >角色:</label>
+                <span th:each="ty : ${allRoles}">
+                    <input type="checkbox" th:field="*{roles}" th:value="${ty}" />
+                    <label th:for="${ty}" th:text="${ty}">..</label>
+                </span>
+            </div>
+
+
+
+
+            <div class="form-group">
+                <label for="registerDate">注册时间</label>
+                <input type="text" class="form-control" id="registerDate" name="registerDate" th:field="*{registerDate}" readonly="readonly" />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Submit</button>
+
+        </form>
+    </div>
+    <div class="row">
+    </div>
+</div>
+
+<footer th:include="fragments/footer :: copy" class="footer">
+</footer>
+
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+
+
+<script src="../../../resources/jquery/jquery-1.12.4.min.js"
+        th:src="@{/resources/jquery/jquery-1.12.4.min.js}"></script>
+<script src="../../../resources/bootstrap-3.3.6/js/bootstrap.min.js"
+        th:src="@{/resources/bootstrap-3.3.6/js/bootstrap.min.js}"></script>
+<script src="../../../resources/jquery-ui-1.12.0/jquery-ui.js"
+        th:src="@{/resources/jquery-ui-1.12.0/jquery-ui.js}"></script>
+<script>
+    $(function () {
+        $("#birthday").datepicker({
+            defaultDate: '1990-01-01',
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: "yy-mm-dd"
+        });
+    });
+</script>
+</body>
+</html>
