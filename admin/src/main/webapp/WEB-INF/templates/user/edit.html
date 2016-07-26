@@ -9,7 +9,7 @@
     <meta name="author" content="">
     <link rel="icon" href="../../../resources/img/favicon.ico" th:href="@{/resources/img/favicon.ico}">
 
-    <title>Help Me!</title>
+    <title>User Edit</title>
 
     <!-- Bootstrap core CSS -->
 
@@ -45,6 +45,10 @@
             <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger" role="alert">
                 <span th:each="err : ${#fields.globalErrors()}" th:text="${err}">...</span>
             </div>
+
+            <input type="hidden" name="searchQueryStr" th:value="${searchQueryStr}">
+
+
 
             <div class="form-group">
                 <label for="id">ID</label>
@@ -83,7 +87,7 @@
 
 
             <div class="form-group" >
-                <label for="birthday">性别:</label>
+                <label >性别:</label>
                 <span th:each="ty : ${allGenders}">
                     <input type="radio" th:field="*{gender}" th:value="${ty}" />
                     <label th:for="${ty}" th:text="${ty}">..</label>
@@ -107,8 +111,8 @@
                 <input type="text" class="form-control" id="registerDate" name="registerDate" th:field="*{registerDate}" readonly="readonly" />
             </div>
 
-            <button type="submit" class="btn btn-primary">Submit</button>
-
+            <button type="submit" class="btn btn-primary">提交</button>
+            <a th:href="@{'/user/list?' + ${searchQueryStr}}" class="btn btn-primary">取消</a>
         </form>
     </div>
     <div class="row">

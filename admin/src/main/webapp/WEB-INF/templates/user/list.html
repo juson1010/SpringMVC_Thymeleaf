@@ -9,7 +9,7 @@
     <meta name="author" content="">
     <link rel="icon" href="../../../resources/img/favicon.ico" th:href="@{/resources/img/favicon.ico}">
 
-    <title>Help Me!</title>
+    <title>User list</title>
 
     <!-- Bootstrap core CSS -->
     <link href="../../../resources/bootstrap-3.3.6/css/bootstrap.min.css"
@@ -33,7 +33,41 @@
         <a th:href="@{/user/create}" class="btn btn-info col-md-2 col-lg-2 col-xs-2 col-sm-2">新增用户</a>
 
     </div>
-    <div class="row">
+
+    <form th:action="@{/user/list}" method="get" th:object="${queryUserBean}">
+
+        <input type="hidden" name="offset" value="0" th:value="*{offset}">
+
+        <div class="form-group">
+            <select class="form-control" th:field="*{gender}">
+                <option th:each="gender : ${allGenders}"
+                        th:value="${gender}"
+                        th:text="${gender}">Wireframe</option>
+            </select>
+        </div>
+
+
+        <div class="form-group">
+            <select class="form-control" th:field="*{role}">
+                <option th:each="role : ${allRoles}"
+                        th:value="${role}"
+                        th:text="${role}">Wireframe</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+
+            <input type="text" class="form-control" th:field="*{mobile_email_name}" name="mobile_email_name" placeholder="输入 邮箱/手机号/姓名">
+
+            <span class="input-group-btn">
+                <button class="btn btn-primary " type="submit" name="action" value="search" >搜索</button>
+            </span>
+        </div>
+
+
+
+
+        <div class="row">
         <table class="table table-striped">
             <tr>
                 <th>用户名</th>
@@ -44,10 +78,11 @@
                 <th>体重</th>
                 <th>出生日期</th>
                 <th>注册时间</th>
-                <th></th>
+                <th>编辑</th>
             </tr>
             <tr th:each="user : ${users}">
-                <td><a href="#" th:href="@{/user/edit(id=${user.id})}" th:text="${user.name}"></a></td>
+                <td><a href="#" th:href="@{/user/edit(id=${user.id},list_gender=*{gender},offset=*{offset},
+                mobile_email_name=*{mobile_email_name},role=*{role})}" th:text="${user.name}"></a></td>
                 <td th:text="${user.gender}"></td>
                 <td th:text="${user.mobile}"></td>
                 <td th:text="${{user.email}}"></td>
@@ -55,10 +90,17 @@
                 <td th:text="${user.weight}"></td>
                 <td th:text="${{user.birthday}}"></td>
                 <td th:text="${{user.registerDate}}"></td>
-                <td><a th:href="@{/user/delete(id=${user.id})}" class="btn btn-danger">删除</a></td>
+                <td><a  th:href=" ${curUserId} == ${user.id} ? '#' : @{/user/delete(id=${user.id})}" class="btn btn-sm btn-danger" th:disabled="${curUserId} == ${user.id}">删除</a></td>
             </tr>
         </table>
     </div>
+
+        <div style="float:right;">
+            <span th:text="${curPage} + '/' + ${allPages}"></span>
+            <button class="btn btn-primary btn-lg" type="submit" name="action" value="pre"   th:disabled = "${curPage} == 1"  >上一页</button>
+            <button class="btn btn-primary btn-lg" type="submit" name="action" value="next"  th:disabled = "${curPage} == ${allPages}" >下一页</button>
+        </div>
+    </form>
 </div>
 
 <footer th:include="fragments/footer :: copy" class="footer">

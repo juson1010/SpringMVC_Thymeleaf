@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.juson.helpme</groupId>
-    <artifactId>helpme</artifactId>
+    <groupId>com.juson.springMVC</groupId>
+    <artifactId>springMVC</artifactId>
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
     <modules>
@@ -17,7 +17,7 @@
 
 
     <build>
-        <finalName>helpme</finalName>
+        <finalName>springMVC</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

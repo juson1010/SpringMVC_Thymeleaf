@@ -1,11 +1,12 @@
 package com.juson.helpme.services;
 
+import com.juson.helpme.QueryUserBean;
 import com.juson.helpme.dao.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.Datastore;
-import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
+import org.mongodb.morphia.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +20,8 @@ import java.util.List;
 public class UserService {
 
     @Autowired
-    Datastore datastore;
+    private Datastore datastore;
+
 
 
     public void save(User user) {
@@ -40,12 +42,16 @@ public class UserService {
             datastore.save(user_Role);
 
         }
+        if (user.getPassword() == null || user.getPassword().length() == 0){
+
+            savePassword(user, "123456");
+        }
         datastore.save(user);
 
     }
 
     public void delete(User user){
-
+    /*删除用户同时,删除其与Role之间的关联,即删除中间表User_Role对应项*/
         List<User_Role> user_Roles = datastore.find(User_Role.class).field("userId").equal(user.getId()).asList();
 
         for (int i = 0;i < user_Roles.size();i++){
@@ -76,59 +82,70 @@ public class UserService {
 
 
 
-    public List<User> getUsers(){
-        List<User> users = datastore.find(User.class).asList();
 
-        for (User user: users) {
-            List<User_Role> roles = datastore.find(User_Role.class).field("userId").equal(user.getId()).asList();
+    public List<User> getUsersByUserBean(QueryUserBean userBean){
 
-            List rolesStr = new ArrayList();
+        if (userBean == null) userBean = new QueryUserBean();
 
-            for (int i = 0; i < roles.size(); i++) {
-                User_Role user_role = roles.get(i);
+        Query<User> query = datastore.find(User.class);
+        if (userBean.getGender() != null && !userBean.getGender().equals("请选择") && userBean.getGender().length() != 0)
+            query.field("gender").equal(userBean.getGender());
 
-                Role role =  datastore.find(Role.class).field("id").equal(user_role.getRoleId()).get();
+        if (userBean.getEmail() != null)
+            query.field("email").containsIgnoreCase(userBean.getEmail());
 
-                rolesStr.add(role.getName());
+        if (userBean.getMobile() != null)
+            query.field("mobile").containsIgnoreCase(userBean.getMobile());
+
+        if (userBean.getName() != null)
+            query.field("name").containsIgnoreCase(userBean.getName());
+
+
+        if (userBean.getMobile_email_name() != null) {
+            String search = userBean.getMobile_email_name();
+            query.or(query.criteria("mobile").containsIgnoreCase(search),query.criteria("email").containsIgnoreCase(search),
+                    query.criteria("name").containsIgnoreCase(search));
+        }
+
+        query.order("-registerDate");
+        int size = query.asList().size();
+        int allPages = (size + 9)/ userBean.getLimit();
+        userBean.setAllPages(allPages);
+
+        query.offset(userBean.getOffset()).limit(userBean.getLimit());
+
+
+
+        List<User> users = getUsersWithRoles(query.asList());
+        List<User> aUsers = new ArrayList<>();
+
+        if (userBean.getRole() != null && !userBean.getRole().equals("未归类") && userBean.getRole().length() != 0){
+
+            for(int i = 0;i < users.size();i++){
+                User user = users.get(i);
+                if (user.getRoles() == null || user.getRoles().size() == 0) continue;
+                else {
+                    for(int j = 0; j < user.getRoles().size();j++){
+                        if (userBean.getRole().equals(user.getRoles().get(j))){
+
+                            aUsers.add(user);
+                            break;
+                        }
+                    }
+                }
+
             }
-            user.setRoles(rolesStr);
 
+        }else{
+            aUsers = users;
         }
+        return aUsers;
 
-        return users;
     }
 
 
-    public List<User> getUsersByName(String name){
-
-        System.out.println("name is "+name);
-        if (name.equals("admin")) name = "管理员";
-        else if (name.equals("user")) name = "注册用户";
-        else name = "数据录入";
-        System.out.println("name is "+name);
-
-        Role role = datastore.find(Role.class).field("name").equal(name).get();
-
-        List<User_Role> user_Roles = datastore.find(User_Role.class).field("roleId").equal(role.getId()).asList();
 
 
-        System.out.println("user_roles size "+ user_Roles.size());
-
-        List<User> users = new ArrayList<>();
-
-
-        for(int i = 0;i < user_Roles.size();i++){
-            User_Role user_role = user_Roles.get(i);
-            User user = datastore.find(User.class).field("id").equal(user_role.getUserId()).get();
-            users.add(user);
-        }
-
-        System.out.println("users size "+ users.size());
-
-
-        return users;
-
-    }
 
 
 
@@ -153,6 +170,27 @@ public class UserService {
     }
 
 
+    /*输入用户列表,为列表内每个用户的roles属性赋值(如果有分类的话)。*/
+    private List<User> getUsersWithRoles(List<User> users){
+
+        for (User user: users) {
+            List<User_Role> roles = datastore.find(User_Role.class).field("userId").equal(user.getId()).asList();
+
+            List rolesStr = new ArrayList();
+
+            for (int i = 0; i < roles.size(); i++) {
+                User_Role user_role = roles.get(i);
+
+                Role role =  datastore.find(Role.class).field("id").equal(user_role.getRoleId()).get();
+
+                rolesStr.add(role.getName());
+            }
+            user.setRoles(rolesStr);
+
+        }
+        return users;
+    }
+
     public Boolean isExistMobile(User postUser){
 
         User user = datastore.find(User.class).field("mobile").equal(postUser.getMobile()).get();
@@ -166,8 +204,51 @@ public class UserService {
     }
 
 
+    /*直接返回数据库所有用户*/
+    public List<User> getUsers(){
+        List<User> users = datastore.find(User.class).asList();
+
+        return getUsersWithRoles(users);
+    }
+    /*输入Role 名字,返回所有该角色的用户*/
+    public List<User> getUsersByName(String name){
+
+        System.out.println("name is "+name);
+        if (name.equals("admin")) name = "管理员";
+        else if (name.equals("user")) name = "注册用户";
+        else  if(name.equals("data")) name = "数据录入";
+        System.out.println("name is "+name);
+
+        Role role = datastore.find(Role.class).field("name").equal(name).get();
+
+        List<User_Role> user_Roles = datastore.find(User_Role.class).field("roleId").equal(role.getId()).asList();
 
 
+        System.out.println("user_roles size "+ user_Roles.size());
+
+        List<User> users = new ArrayList<>();
+
+
+        for(int i = 0;i < user_Roles.size();i++){
+            User_Role user_role = user_Roles.get(i);
+            User user = datastore.find(User.class).field("id").equal(user_role.getUserId()).get();
+
+            users.add(user);
+        }
+
+        System.out.println("users size "+ users.size());
+
+
+        return users;
+
+    }
+
+    public User getUserByMobile(String mobile){
+
+        User user = datastore.find(User.class).field("mobile").equal(mobile).get();
+        return user;
+
+    }
 
 //    public void save(User user) {
 //

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="../../../resources/img/favicon.ico" th:href="@{/resources/img/favicon.ico}">
+
+    <title>资料</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="../../../resources/bootstrap-3.3.6/css/bootstrap.min.css" th:href="@{/resources/bootstrap-3.3.6/css/bootstrap.min.css}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="../../../resources/css/style.css" th:href="@{/resources/css/style.css}" rel="stylesheet">
+
+    <style>
+        pre.prettyprint {
+            background: white;
+            font-family: Menlo, 'Bitstream Vera Sans Mono', 'DejaVu Sans Mono', Monaco, Consolas, monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            border: 1px solid #dedede!important;
+            padding: 10px;
+            max-height: 300px;
+            width: auto;
+            overflow: auto!important;
+        }
+        pre.prettyprint > code {
+            width: auto;
+            overflow: auto!important;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<nav th:include="fragments/nav :: copy" class="navbar navbar-default navbar-static-top">
+</nav>
+
+<!-- Begin page content -->
+<div class="container">
+    <!-- Main component for a primary marketing message or call to action -->
+    <div class="jumbotron">
+        <h6>1.分页查找、页数显示</h6>
+        <pre class="prettyprint">
+            !--Controller---!
+
+            1.分页 query.offset(userBean.getOffset()).limit(userBean.getLimit());
+            2.页数计算与显示
+            总页数
+            int size = query.asList().size();
+            int allPages = (size + 9)/ userBean.getLimit();
+            当前页数
+            userBean.setCurPage((userBean.getOffset()/userBean.getLimit()) + 1);
+
+            !---html Thymeleaf---!
+            3.View 显示方式
+            &lt;div style="float:right;" &gt;
+                &lt;span th:text="${curPage} + '/' + ${allPages}"&gt;&lt;/span&gt;
+                &lt;button class="btn btn-primary btn-lg" type="submit" name="action" value="pre"   th:disabled = "${curPage} == 1"  &gt;上一页&lt;/button&gt;
+                &lt;button class="btn btn-primary btn-lg" type="submit" name="action" value="next"  th:disabled = "${curPage} == ${allPages}" &gt;下一页&lt;/button&gt;
+            &lt;/div&gt;
+        </pre>
+        <h6>2.查找条件保存、不同页面url传参、url中文乱码解决</h6>
+        <pre class="prettyprint">
+
+            1.查询条件类 QueryUserBean
+            public class QueryUserBean {
+
+            private String mobile;
+            private String email;
+            private String name;
+            private String gender;
+
+            private String role;
+
+            private int offset = 0;
+            private int limit = 10;
+            private int curPage = 1;
+            private int allPages;
+            private String mobile_email_name;
+
+            ...
+            }
+
+            2.输入queryUserBean 返回符合查找条件的用户列表
+
+            public List&lt;User&gt; getUsersByUserBean(QueryUserBean userBean){
+
+                    if (userBean == null) userBean = new QueryUserBean();
+
+                    Query&lt;User&gt; query = datastore.find(User.class);
+                    if (userBean.getGender() != null && !userBean.getGender().equals("请选择") && userBean.getGender().length() != 0)
+                        query.field("gender").equal(userBean.getGender());
+
+                    if (userBean.getEmail() != null)
+                        query.field("email").containsIgnoreCase(userBean.getEmail());
+
+                    if (userBean.getMobile() != null)
+                        query.field("mobile").containsIgnoreCase(userBean.getMobile());
+
+                    if (userBean.getName() != null)
+                        query.field("name").containsIgnoreCase(userBean.getName());
+
+
+                    if (userBean.getMobile_email_name() != null) {
+                        String search = userBean.getMobile_email_name();
+                        query.or(query.criteria("mobile").containsIgnoreCase(search),query.criteria("email").containsIgnoreCase(search),
+                                query.criteria("name").containsIgnoreCase(search));
+                    }
+
+                    query.order("-registerDate");
+                    int size = query.asList().size();
+                    int allPages = (size + 9)/ userBean.getLimit();
+                    userBean.setAllPages(allPages);
+
+                    query.offset(userBean.getOffset()).limit(userBean.getLimit());
+
+
+
+                    List&lt;User&gt; users = getUsersWithRoles(query.asList());
+                    List&lt;User&gt; aUsers = new ArrayList();
+
+                    if (userBean.getRole() != null && !userBean.getRole().equals("未归类") && userBean.getRole().length() != 0){
+
+                        for(int i = 0;i < users.size();i++){
+                            User user = users.get(i);
+                            if (user.getRoles() == null || user.getRoles().size() == 0) continue;
+                            else {
+                                for(int j = 0; j < user.getRoles().size();j++){
+                                    if (userBean.getRole().equals(user.getRoles().get(j))){
+
+                                        aUsers.add(user);
+                                        break;
+                                    }
+                                }
+                            }
+
+                        }
+
+                    }else{
+                        aUsers = users;
+                    }
+                    return aUsers;
+                }
+
+                3.从查询页面跳转到修改页面,保存当前查询条件方式:通过url保存查询条件,具体如下
+                    1)Thymeleaf 显示部分添加url参数
+                    &lt;td&gt;&lt;a href="#" th:href="@{/user/edit(id=${user.id},list_gender=*{gender},offset=*{offset},
+                    mobile_email_name=*{mobile_email_name},role=*{role})}" th:text="${user.name}"&gt;&lt;/a&gt;&lt;/td&gt;
+                    2)Controller 接收参数,并添加到model,将值保存到edit.html 页面的form里面
+                        @RequestMapping(value = "edit", method = RequestMethod.GET)
+                        public String getEdit(Model model, @RequestParam String id
+                                ,@RequestParam(required = false) String list_gender
+                                ,@RequestParam(required = false) String mobile_email_name
+                                ,@RequestParam(required = false) String offset
+                                ,@RequestParam(required = false) String role) {
+
+                            User user = userService.getUserById(new ObjectId(id));
+
+                            model.addAttribute("user",user);
+
+                            model.addAttribute("list_gender",list_gender);
+                            model.addAttribute("mobile_email_name",mobile_email_name);
+                            model.addAttribute("offset",offset);
+                            model.addAttribute("role",role);
+
+                            modelAddGendersAndRoles(model);
+
+                            return "user/edit";
+                        }
+                    3).以hidden 属性保存传来的查询参数
+                        &lt;input type="hidden" name="list_gender" th:value="${list_gender}"&gt;
+                        &lt;input type="hidden" name="offset" th:value="${offset}"&gt;
+                        &lt;input type="hidden" name="mobile_email_name" th:value="${mobile_email_name}"&gt;
+                        &lt;input type="hidden" name="role" th:value="${role}"&gt;
+
+                    4).最后当修改页面(edit.html)提交修改,返回到查询页面(list.html)时,
+                        Controller得到对应查询条件,在list.html根据这些条件重新赋值
+
+                        3.Controller
+                         @RequestMapping(value = "list", method = RequestMethod.GET)
+                        public String getList(Model model ,@CurrentUser CustomUserDetails userDetails
+                        ,@RequestParam(required = false) String action
+                        ,@RequestParam(required = false) String gender
+                        ,@RequestParam(required = false) String mobile_email_name
+                                ,@RequestParam(required = false) String offset
+                                ,@RequestParam(required = false) String role
+                                              ) {
+
+                            QueryUserBean userBean = new QueryUserBean();
+
+                            if (offset == null || offset.length() == 0) offset = "0";
+                            userBean.setOffset(Integer.parseInt(offset));
+                            if ("next".equals(action)){
+                                userBean.setOffset(userBean.getOffset() + userBean.getLimit());
+
+                            }else if ("pre".equals(action)){
+                                if (userBean.getOffset() - userBean.getLimit() &lt;= 0) userBean.setOffset(0);
+                                else
+                                    userBean.setOffset(userBean.getOffset() - userBean.getLimit());
+                            }else if ("search".equals(action)){
+                                userBean.setOffset(0);
+                            }
+
+                            userBean.setCurPage((userBean.getOffset()/userBean.getLimit()) + 1);
+                            userBean.setRole(role);
+                            userBean.setLimit(10);
+                            userBean.setMobile_email_name(mobile_email_name);
+                            userBean.setGender(gender);
+
+
+                            List&lt;User&gt; users = userService.getUsersByUserBean(userBean);
+
+                            model.addAttribute("queryUserBean",userBean);
+                            model.addAttribute("users", users);
+
+                            model.addAttribute("curPage",userBean.getCurPage());
+                            model.addAttribute("allPages",userBean.getAllPages());
+
+                            List&lt;String&gt; genders = new ArrayList();
+                            genders.add("请选择");
+                            genders.add("男");
+                            genders.add("女");
+                            genders.add("保密");
+
+                            model.addAttribute("allGenders",genders);
+
+                            List&lt;String&gt; roles = new ArrayList();
+                            roles.add("未归类");
+                            roles.add("管理员");
+                            roles.add("注册用户");
+                            roles.add("数据录入");
+                            model.addAttribute("allRoles",roles);
+
+                            model.addAttribute("curUserId",userDetails.getUser().getId());
+
+                            return "user/list";
+                        }
+
+                    5).
+
+        </pre>
+
+
+    </div>
+</div>
+
+<footer th:include="fragments/footer :: copy" class="footer">
+</footer>
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="https://cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
+<script src="../../../resources/bootstrap-3.3.6/js/bootstrap.min.js" th:src="@{/resources/bootstrap-3.3.6/js/bootstrap.min.js}"></script>
+</body>
+</html>

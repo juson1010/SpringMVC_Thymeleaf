@@ -9,7 +9,7 @@
     <meta name="author" content="">
     <link rel="icon" href="../../../resources/img/favicon.ico" th:href="@{/resources/img/favicon.ico}">
 
-    <title>Help Me!</title>
+    <title>SpringMVC_Thymeleaf</title>
 
     <!-- Bootstrap core CSS -->
     <link href="../../../resources/bootstrap-3.3.6/css/bootstrap.min.css" th:href="@{/resources/bootstrap-3.3.6/css/bootstrap.min.css}" rel="stylesheet">
@@ -39,16 +39,20 @@
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">用户查询 <span class="caret"></span></a>
                     <ul class="dropdown-menu">
-                        <li><a href="#" th:href="@{/user/search(name='admin')}">管理员</a></li>
-                        <li><a href="#" th:href="@{/user/search(name='user')}">注册用户</a></li>
-                        <li><a href="#" th:href="@{/user/search(name='data')}">数据录入</a></li>
+                        <li><a href="#" >管理员</a></li>
+                        <li><a href="#" >注册用户</a></li>
+                        <li><a href="#" >数据录入</a></li>
                         <!--<li role="separator" class="divider"></li>-->
                         <!--<li class="dropdown-header">Nav header</li>-->
                         <!--<li><a href="#">Separated link</a></li>-->
                         <!--<li><a href="#">One more separated link</a></li>-->
                     </ul>
                 </li>
+                <li><a href="#" th:href="@{/papers}">资料</a>
+
+                </li>
             </ul>
+
             <ul class="nav navbar-nav navbar-right">
                 <li><a href="#" th:text="${username}">用户XXX</a></li>
                 <li><a href="#" th:href="@{/logout}">退出登录</a></li>
